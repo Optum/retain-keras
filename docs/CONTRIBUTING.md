@@ -1,9 +1,9 @@
 # Contribution Guidelines
 
 Please note that this project is released with a
-[Contributor Code of Conduct](docs/CODE-OF-CONDUCT.md). By participating in this
+[Contributor Code of Conduct](CODE-OF-CONDUCT.md). By participating in this
 project you agree to abide by its terms.  You will also need to sign our
-[Contributor License Agreement](docs/RETAIN%20Keras%20Individual%20Contributor%20License%20Agreement%20-%20February%202018.pdf) prior to
+[Contributor License Agreement](RETAIN%20Keras%20Individual%20Contributor%20License%20Agreement%20-%20February%202018.pdf) prior to
 submitting any changes to the project. Once completed, the agreement should be
 emailed to [opensource@optum.com][email].
 
