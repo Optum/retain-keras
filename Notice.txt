@@ -1,0 +1,24 @@
+RETAIN Keras
+Copyright (c) Optum 2018
+All rights reserved.
+
+Portions Copyright (c) 2016, mp2893
+All rights reserved.  See RETAIN-LICENSE.txt
+
+Portions Copyright (c) 2015 - 2018, François Chollet.
+All rights reserved.  See Keras-LICENSE.txt
+
+
+Project Description:
+====================
+Retain-Keras is a Keras reimplementation of RETAIN Neural Network introduced by Edward Choi(1).
+
+This implementation adds several features and provides additional scripts to evaluate and visualize predictions for each patient
+
+Authors: 
+Tim Rosenflanz (@tRosenflanz),Copyright Optum 2018
+Ryan Caldwell (@rcaldwe4),Copyright Optum 2018
+
+
+References:
+1. Edward Choi, Mohammad Taha Bahadori, Joshua A. Kulas, Andy Schuetz, Walter F. Stewart, Jimeng Sun, 2016, RETAIN: An interpretable predictive model for healthcare using reverse time attention mechanism, In Proc. of Neural Information Processing Systems (NIPS) 2016, pp.3504-3512. GitHub Repo
