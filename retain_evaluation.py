@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, average_precision_score,\
                             precision_recall_curve, roc_curve
+from sklearn.calibration import calibration_curve
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import keras.backend as K
@@ -81,9 +82,41 @@ def precision_recall(y_true, y_prob, graph):
         plt.xlim([0.0, 1.0])
         plt.legend(loc="lower left")
         print('Precision-Recall Curve saved to pr.png')
-        plt.savefig('pr')
+        plt.savefig('pr.png')
     else:
         print('Average Precision %0.3f' % average_precision)
+
+def probability_calibration(y_true, y_prob,graph):
+    if graph:
+        fig_index = 1
+        name = 'My pred'
+        n_bins = 20
+        fig = plt.figure(fig_index, figsize=(10, 10))
+        ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
+        ax2 = plt.subplot2grid((3, 1), (2, 0))
+
+        ax1.plot([0, 1], [0, 1], "k:", label="Perfectly calibrated")
+
+        fraction_of_positives, mean_predicted_value = \
+            calibration_curve(y_true, y_prob, n_bins=n_bins, normalize=True)
+
+        ax1.plot(mean_predicted_value, fraction_of_positives,
+                 label=name)
+
+        ax2.hist(y_prob, range=(0, 1), bins=n_bins, label=name,
+                 histtype="step", lw=2)
+
+        ax1.set_ylabel("Fraction of Positives")
+        ax1.set_ylim([-0.05, 1.05])
+        ax1.legend(loc="lower right")
+        ax1.set_title('Calibration Plots  (Reliability Curve)')
+
+        ax2.set_xlabel("Mean predicted value")
+        ax2.set_ylabel("Count")
+        ax2.legend(loc="upper center", ncol=2)
+        print('Probability Calibration Curves saved to calibration.png')
+        plt.tight_layout()
+        plt.savefig('calibration.png')
 
 def lift(y_true, y_prob, graph):
     """Print Precision Recall Statistics and Graph"""
@@ -120,7 +153,7 @@ def roc(y_true, y_prob, graph):
         plt.title('Receiver Operating Characteristic')
         plt.legend(loc="lower right")
         print('ROC Curve saved to roc.png')
-        plt.savefig('roc')
+        plt.savefig('roc.png')
     else:
         print('ROC-AUC %0.3f' % roc_auc)
 
@@ -221,7 +254,7 @@ def main(ARGS):
     roc(y, probabilities[:, 0, -1], ARGS.omit_graphs)
     precision_recall(y, probabilities[:, 0, -1], ARGS.omit_graphs)
     lift(y, probabilities[:, 0, -1], ARGS.omit_graphs)
-
+    probability_calibration(y, probabilities[:, 0, -1], ARGS.omit_graphs)
 
 def parse_arguments(parser):
     """Read user arguments"""
