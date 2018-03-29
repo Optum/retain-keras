@@ -171,8 +171,9 @@ def get_importances(alphas, betas, patient_data, model_parameters, dictionary):
         index += 1
 
     if model_parameters.use_time:
-        time = patient_data[index][0]
-
+        time = patient_data[index][0].reshape((len(codes),))
+    else:
+        time = np.arange(len(codes))
     for i in range(len(patient_data[0][0])):
         visit_codes = codes[i]
         visit_beta = betas[i]
@@ -193,7 +194,7 @@ def get_importances(alphas, betas, patient_data, model_parameters, dictionary):
                                  'feature': [dictionary[index] for index in relevant_indices],
                                  'importance_feature':alpha_scaled[:, 0],
                                  'importance_visit':visit_alpha,
-                                 'to_event':time[i][0]},
+                                 'to_event':time[i]},
                                 columns=['status', 'feature', 'importance_feature',
                                          'importance_visit', 'to_event'])
         df_visit = df_visit[df_visit['feature'] != 'PADDING']
