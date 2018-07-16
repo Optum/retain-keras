@@ -16,7 +16,6 @@ RETAIN has shown to be highly effective for creating predictive models for a mul
 * Ability to evaluate models during training
 * Ability to train models with only positive contributions which improves performance
 * Extra script to evaluate the model and output several helper graphics
-* Extra dashboard to dynamically create interpretations for each patient (work in progress)
 
 ## Running RETAIN-Keras
 
@@ -29,8 +28,7 @@ RETAIN has shown to be highly effective for creating predictive models for a mul
 5. Numpy
 6. Pandas
 7. Matplotlib (evaluation)
-8. Dash (dashboarding)
-9. [Keras-experiments by Alex Volkov](https://github.com/avolkov1/keras_experiments):
+8. [Keras-experiments by Alex Volkov](https://github.com/avolkov1/keras_experiments):
 
     pip install git+https://github.com/avolkov1/keras_experiments/
 
