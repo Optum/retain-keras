@@ -1,3 +1,61 @@
+# Fork of RETAIN-Keras to secure file storage (swift) 
+
+- First switch to the _DEPARTMENT account and verify that you can see the data 
+  (your authentication token in folder ~/.swift will also be updated at the same time)
+  
+	petersen@rhino3:$ sw2account _DEPTARTMENT
+	petersen@rhino3:$ swc ls /NLP/data
+  
+- Setup an encrypted folder in your home directory
+
+	petersen@rhino3:$ fhsecTmpFolder 
+	previous ~/Private folder exists. Delete it now? [y/N] y
+	Creating encrypted folder ~/Private ... Done...mounting...OK !
+
+	  ~/Private is now a temporary encrypted folder.
+	  After you log out, it will no longer be accessible,
+	  unless you keep the mount passphrase: dayI4mrmYjy9yIPt.
+
+	  You cannot access ~/Private on other cluster nodes.
+
+	  PLEASE NOTE: To store PHI/PII data in this folder 
+	  you will need explicit approval by the Information
+	  Security Office, please request a policy exception at:
+	  https://helpdesk.fhcrc.org/CherwellPortal/ISO
+  
+- initialize a current Python3 and verify that it has tensorflow and sci package >= 0.1.0
+
+	petersen@rhino3:$ ml Python/3.6.7-foss-2016b-fh1
+	petersen@rhino3:$ python3
+	Python 3.6.7 (default, Dec  6 2018, 05:27:59) 
+	[GCC 5.4.0] on linux
+	Type "help", "copyright", "credits" or "license" for more information.
+	>>> import tensorflow, sci
+	>>> tensorflow.__version__
+	'1.12.0'
+	>>> sci.__version__
+	'0.1.0'
+
+- install package 'sci' if you do not have v >= 0.1.0 or sci.__version__ throws an error 
+
+	petersen@rhino3:$ pip3 install --user --upgrade sci	
+	Collecting sci
+	  Downloading https://files.pythonhosted.org/packages/a6/6b/e371b7e7b5e31adc2d0176dad2b04548657c88bf6332e703aa234278edf3/sci-0.1.0.tar.gz
+	Installing collected packages: sci
+	Successfully installed sci-0.1.0
+			
+- clone the forked version of retain-keras (anywhere but not under ~/Private)
+
+	petersen@rhino3:$ git clone git@github.com:FredHutch/retain-keras.git
+
+- run the train.sh and evaluate scripts
+
+    petersen@rhino3:$ cd retain-keras
+    petersen@rhino3:$ ./train.sh
+    petersen@rhino3:$ ./evaluate.sh
+
+
+
 # RETAIN-Keras: Keras reimplementation of RETAIN
 
 [RETAIN is a neural network architecture originally introduced by Edward Choi](https://arxiv.org/abs/1608.05745) that allows to create highly interpretable Recurrent Neural Network models for patient diagnosis without any loss in model performance
