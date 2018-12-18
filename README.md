@@ -50,9 +50,9 @@
 
 	- run the train.sh and evaluate scripts
 
-		petersen@rhino3:$ cd retain-keras
-		petersen@rhino3:$ ./train.sh
-		petersen@rhino3:$ ./evaluate.sh
+			petersen@rhino3:$ cd retain-keras
+			petersen@rhino3:$ ./train.sh
+			petersen@rhino3:$ ./evaluate.sh
 
 
 
