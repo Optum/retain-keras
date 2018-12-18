@@ -1,12 +1,15 @@
-# Fork of RETAIN-Keras to secure file storage (swift) 
+# Fork of RETAIN-Keras to use secure object storage 
 
-- First switch to the _DEPARTMENT/PI account and verify that you can see the data 
-  (your authentication token in folder ~/.swift will also be updated at the same time)
+To process highly sensitive data we need to use a storage system that supports encryption at rest, encryption in transit and access auditing. To support this workflow we use the 'store' methods in the sci package. (https://pypi.org/project/sci/) and modify the code in retain_train.py and retain_evaluation.py (new files retain_train_sec.py and retain_evaluation_sec.py)
+
+## running the code 
+
+- First switch to the _DEPARTMENT/PI account and verify that you can see the data (your authentication token in folder ~/.swift will also be updated at the same time)
   
-		petersen@rhino3:$ sw2account _DEPTARTMENT
+		petersen@rhino3:$ sw2account _DEPARTMENT
 		petersen@rhino3:$ swc ls /NLP/data
   
-- Setup an encrypted folder in your home directory
+- Setup an encrypted folder in your home directory. This folder will be used for temporary data used by packages such as tensorflow and matplotlib. We do not want to modify the code in these complex packages. 
 
 		petersen@rhino3:$ fhsecTmpFolder 
 		previous ~/Private folder exists. Delete it now? [y/N] y
@@ -14,7 +17,7 @@
 
 		~/Private is now a temporary encrypted folder.
 		After you log out, it will no longer be accessible,
-		unless you keep the mount passphrase: dayI4mrmYjy9yIPt.
+		unless you keep the mount passphrase: dayXXXXXXXXXIPt.
 
 		You cannot access ~/Private on other cluster nodes.
 
@@ -23,16 +26,16 @@
 		Security Office, please request a policy exception at:
 		https://helpdesk.fhcrc.org/CherwellPortal/ISO
   
-- initialize a current Python3 and verify that it has tensorflow and sci package >= 0.1.0
+- initialize a current Python3 and verify that it has tensorflow and sci package >= 0.1.0 (Note: Python/3.6.7-foss-2016b-fh1 with Tensorflow 1.12.0 is crashing as of 12/18/2018, reason unknown)
 
-		petersen@rhino3:$ ml Python/3.6.7-foss-2016b-fh1
+		petersen@rhino3:$ ml Python/3.6.5-foss-2016b-fh3
 		petersen@rhino3:$ python3
 		Python 3.6.7 (default, Dec  6 2018, 05:27:59) 
 		[GCC 5.4.0] on linux
 		Type "help", "copyright", "credits" or "license" for more information.
 		>>> import tensorflow, sci
 		>>> tensorflow.__version__
-		'1.12.0'
+		'1.8.0'
 		>>> sci.__version__
 		'0.1.0'
 
@@ -53,6 +56,36 @@
 			petersen@rhino3:$ cd retain-keras
 			petersen@rhino3:$ ./train.sh
 			petersen@rhino3:$ ./evaluate.sh
+
+
+## discussing the swift object storage functions
+
+To support the workflows we need to import several packages
+
+	import sci, io, os, glob
+
+Then we modify the read_data function. ARGS.path_data defaults to a pickle in a data sub directory 'data/data_test.pkl'. We copied these files into a virtual folder named 'data' in the object storage system. 
+
+In the original function a pandas data frame is simply read from the file system 
+
+	def read_data(model_parameters, ARGS):
+		data = pd.read_pickle(ARGS.path_data)
+
+In the new function we modify this to use the object store
+
+	def read_data(model_parameters, ARGS):
+		# initialize the connection to object storage 
+		mystor=sci.store.swift('NLP', 'data')
+		# read data from swift using the object_get function 
+		# and copy it into a new  virtual file handle using io.BytesIO 
+		hnd1 = io.BytesIO(mystor.object_get(ARGS.path_data))
+		data = pd.read_pickle(hnd1)
+
+In packages where we do not want to modify the code we can write data into the ~/Private folder temporarily and then copy it back to the object store.
+
+	myfolder =  os.path.expanduser('~/Private/retain')
+	myfiles=glob.glob("%s/*" % myfolder)
+    uploaded=mystor.file_upload(myfiles)
 
 
 
