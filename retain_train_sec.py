@@ -1,6 +1,4 @@
 """Implementation of RETAIN Keras from Edward Choi"""
-import sci, io, glob
-#
 import os
 import argparse
 import numpy as np
@@ -112,31 +110,10 @@ class FreezePadding(Constraint):
 
 def read_data(ARGS):
     """Read the data from provided paths and assign it into lists"""
-    #data_train_df = pd.read_pickle(ARGS.path_data_train)
-    #data_test_df = pd.read_pickle(ARGS.path_data_test)
-    #y_train = pd.read_pickle(ARGS.path_target_train)['target'].values
-    #y_test = pd.read_pickle(ARGS.path_target_test)['target'].values
-
-    
-    # use the object_get function to get the pickle, assign it to the 
-    # virtual file handle via io.BytesIO and pass the handle to pandas
-    #mypickle=mystor.object_get(ARGS.path_data_train)
-    #hnd1 = io.BytesIO(mypickle)
-    #data_train_df = pd.read_pickle(hnd1)
-    
-    hnd1 = io.BytesIO(mystor.object_get(ARGS.path_data_train))
-    data_train_df = pd.read_pickle(hnd1)
-
-    hnd2 = io.BytesIO(mystor.object_get(ARGS.path_data_test))
-    data_test_df = pd.read_pickle(hnd2)
-    
-    hnd3 = io.BytesIO(mystor.object_get(ARGS.path_target_train))
-    y_train = pd.read_pickle(hnd3)['target'].values
-    
-    hnd4 = io.BytesIO(mystor.object_get(ARGS.path_target_test))
-    y_test = pd.read_pickle(hnd4)['target'].values    
-
-
+    data_train_df = pd.read_pickle(ARGS.path_data_train)
+    data_test_df = pd.read_pickle(ARGS.path_data_test)
+    y_train = pd.read_pickle(ARGS.path_target_train)['target'].values
+    y_test = pd.read_pickle(ARGS.path_target_test)['target'].values
     data_output_train = [data_train_df['codes'].values]
     data_output_test = [data_test_df['codes'].values]
 
@@ -381,10 +358,4 @@ if __name__ == '__main__':
 
     PARSER = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ARGS = parse_arguments(PARSER)
-    # initialize connect to swift
-    mystor=sci.store.swift('NLP', 'data')
-    objects = mystor.bucket_list()
-    print(len(objects),objects)    
     main(ARGS)
-    myfiles=glob.glob("%s/*" % ARGS.directory)
-    uploaded=mystor.file_upload(myfiles)
