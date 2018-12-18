@@ -1,4 +1,6 @@
 """RETAIN Model Evaluation"""
+import sci, io, os, glob
+#
 import argparse
 import numpy as np
 import pandas as pd
@@ -82,7 +84,7 @@ def precision_recall(y_true, y_prob, graph):
         plt.xlim([0.0, 1.0])
         plt.legend(loc="lower left")
         print('Precision-Recall Curve saved to pr.png')
-        plt.savefig('pr.png')
+        plt.savefig(os.path.join(os.path.dirname(ARGS.path_model).replace('Model',''),'pr.png'))
     else:
         print('Average Precision %0.3f' % average_precision)
 
@@ -116,7 +118,7 @@ def probability_calibration(y_true, y_prob,graph):
         ax2.legend(loc="upper center", ncol=2)
         print('Probability Calibration Curves saved to calibration.png')
         plt.tight_layout()
-        plt.savefig('calibration.png')
+        plt.savefig(os.path.join(os.path.dirname(ARGS.path_model).replace('Model',''),'calibration.png'))
 
 def lift(y_true, y_prob, graph):
     """Print Precision Recall Statistics and Graph"""
@@ -134,7 +136,7 @@ def lift(y_true, y_prob, graph):
         plt.xlim([0.0, 1.0])
         plt.legend(loc="lower left")
         print('Lift-Recall Curve saved to lift.png')
-        plt.savefig('lift')
+        plt.savefig(os.path.join(os.path.dirname(ARGS.path_model).replace('Model',''),'lift.png'))
     else:
         print('Average Lift %0.3f' % average_lift)
 
@@ -153,7 +155,7 @@ def roc(y_true, y_prob, graph):
         plt.title('Receiver Operating Characteristic')
         plt.legend(loc="lower right")
         print('ROC Curve saved to roc.png')
-        plt.savefig('roc.png')
+        plt.savefig(os.path.join(os.path.dirname(ARGS.path_model).replace('Model',''),'roc.png'))
     else:
         print('ROC-AUC %0.3f' % roc_auc)
 
@@ -224,8 +226,12 @@ class SequenceBuilder(Sequence):
 
 def read_data(model_parameters, ARGS):
     """Read the data from provided paths and assign it into lists"""
-    data = pd.read_pickle(ARGS.path_data)
-    y = pd.read_pickle(ARGS.path_target)['target'].values
+    
+    # create a virtual file handle and read data from swift
+    hnd1 = io.BytesIO(mystor.object_get(ARGS.path_data))
+    data = pd.read_pickle(hnd1)
+    hnd2 = io.BytesIO(mystor.object_get(ARGS.path_target))
+    y = pd.read_pickle(hnd2)['target'].values
     data_output = [data['codes'].values]
 
     if model_parameters.numeric_size:
@@ -279,4 +285,11 @@ if __name__ == '__main__':
 
     PARSER = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ARGS = parse_arguments(PARSER)
+    # initialize connect to swift
+    mystor=sci.store.swift('NLP', 'data')
+    objects = mystor.bucket_list()
+    print(len(objects),objects)
     main(ARGS)
+    myfiles=glob.glob("%s/*" % os.path.dirname(ARGS.path_model).replace('Model',''))
+    uploaded=mystor.file_upload(myfiles)
+    
