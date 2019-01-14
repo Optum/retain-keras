@@ -246,7 +246,7 @@ def get_predictions(model, data, model_parameters, ARGS):
 def output_results(pids, y_true, y_prob, output, inflection_point):
     if output:
         df = pd.DataFrame({'IDs': pids, 'Actual': y_true, 'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0)})
-        df['Correct'] = np.where(df['Actual']==df['Predicted_Rounded'], 1, 0)
+        df['target'] = np.where(df['Actual']==df['Predicted_Rounded'], 1, 0)
         print("the evaluation output saved to {}".format(output))
         df.to_csv(output)
 
