@@ -241,9 +241,9 @@ def get_predictions(model, data, model_parameters, ARGS):
                                     use_multiprocessing=True, verbose=1, workers=3)
     return preds
 
-def output_results(y_true, y_prob, output):
+def output_results(y_true, y_prob, output, inflection_point):
     if output:
-        df = pd.DataFrame({'Actual': y_true, 'Predicted_Rounded': np.where(y_prob>0.5, 1, 0)})
+        df = pd.DataFrame({'Actual': y_true, 'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0)})
         df['Correct'] = np.where(df['Actual']==df['Predicted_Rounded'], 1, 0)
         print("the evaluation output saved to {}".format(output))
         df.to_csv(output)
@@ -262,7 +262,7 @@ def main(ARGS):
     precision_recall(y, probabilities[:, 0, -1], ARGS.omit_graphs)
     lift(y, probabilities[:, 0, -1], ARGS.omit_graphs)
     probability_calibration(y, probabilities[:, 0, -1], ARGS.omit_graphs)
-    output_results(y, probabilities[:, 0, -1], ARGS.output_results)
+    output_results(y, probabilities[:, 0, -1], ARGS.output_results, ARGS.results_cutoff)
 
 def parse_arguments(parser):
     """Read user arguments"""
@@ -279,6 +279,8 @@ def parse_arguments(parser):
                         help='Maximum number of visits after which the data is truncated')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='Batch size for prediction (higher values are generally faster)')
+    parser.add_argument('--results_cutoff', type=float, default=0.5,
+                        help='The cutoff value for evaluating a prediction as true or false. Must be between 0 and 1')
     parser.add_argument('--output_results', type=str, default='data/evaluation_results.csv',
                         help='Path to place output results.')
     args = parser.parse_args()
