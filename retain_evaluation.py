@@ -225,6 +225,8 @@ class SequenceBuilder(Sequence):
 def read_data(model_parameters, ARGS):
     """Read the data from provided paths and assign it into lists"""
     data = pd.read_pickle(ARGS.path_data)
+    print("data columns: {}".format(data.columns))
+    pids = data['PID'].values
     y = pd.read_pickle(ARGS.path_target)['target'].values
     data_output = [data['codes'].values]
 
@@ -232,7 +234,7 @@ def read_data(model_parameters, ARGS):
         data_output.append(data['numerics'].values)
     if model_parameters.use_time:
         data_output.append(data['to_event'].values)
-    return (data_output, y)
+    return (data_output, y, pids)
 
 def get_predictions(model, data, model_parameters, ARGS):
     """Get Model Predictions"""
@@ -241,9 +243,9 @@ def get_predictions(model, data, model_parameters, ARGS):
                                     use_multiprocessing=True, verbose=1, workers=3)
     return preds
 
-def output_results(y_true, y_prob, output, inflection_point):
+def output_results(pids, y_true, y_prob, output, inflection_point):
     if output:
-        df = pd.DataFrame({'Actual': y_true, 'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0)})
+        df = pd.DataFrame({'IDs': pids, 'Actual': y_true, 'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0)})
         df['Correct'] = np.where(df['Actual']==df['Predicted_Rounded'], 1, 0)
         print("the evaluation output saved to {}".format(output))
         df.to_csv(output)
@@ -254,7 +256,7 @@ def main(ARGS):
     model = import_model(ARGS.path_model)
     model_parameters = get_model_parameters(model)
     print('Reading Data')
-    data, y = read_data(model_parameters, ARGS)
+    data, y, pids = read_data(model_parameters, ARGS)
     print('Predicting the probabilities')
     probabilities = get_predictions(model, data, model_parameters, ARGS)
     print('Evaluating')
@@ -262,7 +264,7 @@ def main(ARGS):
     precision_recall(y, probabilities[:, 0, -1], ARGS.omit_graphs)
     lift(y, probabilities[:, 0, -1], ARGS.omit_graphs)
     probability_calibration(y, probabilities[:, 0, -1], ARGS.omit_graphs)
-    output_results(y, probabilities[:, 0, -1], ARGS.output_results, ARGS.results_cutoff)
+    output_results(pids, y, probabilities[:, 0, -1], ARGS.output_results, ARGS.results_cutoff)
 
 def parse_arguments(parser):
     """Read user arguments"""
