@@ -225,16 +225,20 @@ class SequenceBuilder(Sequence):
 def read_data(model_parameters, ARGS):
     """Read the data from provided paths and assign it into lists"""
     data = pd.read_pickle(ARGS.path_data)
-    print("data columns: {}".format(data.columns))
-    pids = data['PID'].values
+    info = {}
+    if ARGS.include_ids:
+        info["pids"] = data['PID'].values
     y = pd.read_pickle(ARGS.path_target)['target'].values
+    info["targets"] = y
+    
     data_output = [data['codes'].values]
-
     if model_parameters.numeric_size:
         data_output.append(data['numerics'].values)
     if model_parameters.use_time:
         data_output.append(data['to_event'].values)
-    return (data_output, y, pids)
+    info["data"] = data_output
+
+    return info
 
 def get_predictions(model, data, model_parameters, ARGS):
     """Get Model Predictions"""
@@ -243,10 +247,13 @@ def get_predictions(model, data, model_parameters, ARGS):
                                     use_multiprocessing=True, verbose=1, workers=3)
     return preds
 
-def output_results(pids, y_true, y_prob, output, inflection_point):
-    if output:
-        df = pd.DataFrame({'IDs': pids, 'Actual': y_true, 'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0)})
+def output_results(info_dict, y_prob, output, inflection_point):
+    if output:     
+        df = pd.DataFrame({'Actual': info_dict["targets"], 'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0)})
+        
         df['target'] = np.where(df['Actual']==df['Predicted_Rounded'], 1, 0)
+        if "pids" in info_dict:
+            df["IDs"] = info_dict["pids"]
         print("the evaluation output saved to {}".format(output))
         df.to_csv(output)
 
@@ -256,15 +263,15 @@ def main(ARGS):
     model = import_model(ARGS.path_model)
     model_parameters = get_model_parameters(model)
     print('Reading Data')
-    data, y, pids = read_data(model_parameters, ARGS)
+    info = read_data(model_parameters, ARGS)
     print('Predicting the probabilities')
-    probabilities = get_predictions(model, data, model_parameters, ARGS)
+    probabilities = get_predictions(model, info["data"], model_parameters, ARGS)
     print('Evaluating')
-    roc(y, probabilities[:, 0, -1], ARGS.omit_graphs)
-    precision_recall(y, probabilities[:, 0, -1], ARGS.omit_graphs)
-    lift(y, probabilities[:, 0, -1], ARGS.omit_graphs)
-    probability_calibration(y, probabilities[:, 0, -1], ARGS.omit_graphs)
-    output_results(pids, y, probabilities[:, 0, -1], ARGS.output_results, ARGS.results_cutoff)
+    roc(info["targets"], probabilities[:, 0, -1], ARGS.omit_graphs)
+    precision_recall(info["targets"], probabilities[:, 0, -1], ARGS.omit_graphs)
+    lift(info["targets"], probabilities[:, 0, -1], ARGS.omit_graphs)
+    probability_calibration(info["targets"], probabilities[:, 0, -1], ARGS.omit_graphs)
+    output_results(info, probabilities[:, 0, -1], ARGS.output_results, ARGS.results_cutoff)
 
 def parse_arguments(parser):
     """Read user arguments"""
@@ -285,6 +292,8 @@ def parse_arguments(parser):
                         help='The cutoff value for evaluating a prediction as true or false. Must be between 0 and 1')
     parser.add_argument('--output_results', type=str, default='data/evaluation_results.csv',
                         help='Path to place output results.')
+    parser.add_argument('--include_ids', action='store_true', default=False,
+                        help="Whether to include ID's in output results.")
     args = parser.parse_args()
 
     return args
