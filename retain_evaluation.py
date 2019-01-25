@@ -227,7 +227,6 @@ def read_data(model_parameters, ARGS):
     data = pd.read_pickle(ARGS.path_data)
     y = pd.read_pickle(ARGS.path_target)['target'].values
     data_output = [data['codes'].values]
-
     if model_parameters.numeric_size:
         data_output.append(data['numerics'].values)
     if model_parameters.use_time:
