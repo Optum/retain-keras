@@ -9,6 +9,7 @@ from keras.models import load_model, Model
 from keras.preprocessing import sequence
 from keras.constraints import Constraint
 from keras.utils.data_utils import Sequence
+from tqdm import tqdm
 
 def import_model(path):
     """Import model from given path and assign it to appropriate devices"""
@@ -144,6 +145,10 @@ class SequenceBuilder(Sequence):
 
         return outputs
 
+    def all_patient_data(self):
+        for i in range(0, self.__len__()):
+            yield self.__getitem__(i)
+
 
 def read_data(model_parameters, path_data, path_dictionary):
     """Read the data from provided paths and assign it into lists"""
@@ -210,6 +215,12 @@ def get_predictions(model, data, model_parameters, ARGS):
                                     use_multiprocessing=True, verbose=1, workers=3)
     return preds
 
+def bayesian_average(df):
+    R = df.mean(axis=1)
+    C = df.sum(axis=1).sum()/df.count(axis=1).sum()
+    w = df.count(axis=1)/(df.count(axis=1)+df.count(axis=1).mean())
+    return ((w*R) + ((1-w)*C))
+
 def main(ARGS):
     """Main Body of the code"""
     print('Loading Model and Extracting Parameters')
@@ -221,21 +232,43 @@ def main(ARGS):
     probabilities = get_predictions(model, data, model_parameters, ARGS)
     ARGS.batch_size = 1
     data_generator = SequenceBuilder(data, model_parameters, ARGS)
-    while 1:
-        patient_id = int(input('Input Patient Order Number: '))
-        if patient_id > len(data[0]) - 1:
-            print('Invalid ID, there are only {} patients'.format(len(data[0])))
-        elif patient_id < 0:
-            print('Only Positive IDs are accepted')
-        else:
-            print('Patients probability: {}'.format(probabilities[patient_id, 0, 0]))
-            proceed = str(input('Output predictions? (y/n): '))
-            if proceed == 'y':
-                patient_data = data_generator.__getitem__(patient_id)
+    if ARGS.avg:
+        print("Calculating average feature weights for the given model/data (this could take a while...)")
+        mean_avgs = pd.DataFrame(index=dictionary.values())
+        ba_avgs = pd.DataFrame(index=dictionary.values())
+        with tqdm(total=data_generator.__len__()) as pbar:
+            for count, patient_data in enumerate(data_generator.all_patient_data()):
                 proba, alphas, betas = model_with_attention.predict_on_batch(patient_data)
                 visits = get_importances(alphas[0], betas[0], patient_data, model_parameters, dictionary)
-                for visit in visits:
-                    print(visit)
+                feature_values = pd.concat([visit.set_index('feature')['importance_feature'] for visit in visits], axis=1, sort=True)
+                # averaged across all visits
+                mean_avgs['patient_{}'.format(count)] = feature_values.mean(axis=1)
+                ba_avgs['patient_{}'.format(count)] = bayesian_average(feature_values)
+                # update progress bar
+                pbar.update(1)
+        # averaged across all patients
+        full_avgs = pd.DataFrame(index=dictionary.values())
+        full_avgs['Mean'] = mean_avgs.mean(axis=1)
+        full_avgs['Bayes'] = bayesian_average(ba_avgs)
+        full_avgs.dropna(how='all', inplace=True)
+        full_avgs.to_pickle('feature_weights.pkl')
+        print(full_avgs.to_string())
+    else:
+        while 1:
+            patient_id = int(input('Input Patient Order Number: '))
+            if patient_id > len(data[0]) - 1:
+                print('Invalid ID, there are only {} patients'.format(len(data[0])))
+            elif patient_id < 0:
+                print('Only Positive IDs are accepted')
+            else:
+                print('Patients probability: {}'.format(probabilities[patient_id, 0, 0]))
+                proceed = str(input('Output predictions? (y/n): '))
+                if proceed == 'y':
+                    patient_data = data_generator.__getitem__(patient_id)
+                    proba, alphas, betas = model_with_attention.predict_on_batch(patient_data)
+                    visits = get_importances(alphas[0], betas[0], patient_data, model_parameters, dictionary)
+                    for visit in visits:
+                        print(visit)
 
 def parse_arguments(parser):
     """Read user arguments"""
@@ -248,6 +281,8 @@ def parse_arguments(parser):
                         help='Path to codes dictionary')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='Batch size for initial probability predictions')
+    parser.add_argument('--avg', action='store_true',
+                        help='if set, compiles avg of features weights across all patients/visits')
     # parser.add_argument('--id', type=int, default=0,
     #                     help='Id of the patient being interpreted')
     args = parser.parse_args()
