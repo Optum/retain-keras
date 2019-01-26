@@ -218,7 +218,7 @@ def get_predictions(model, data, model_parameters, ARGS):
 def bayesian_average(df):
     R = df.mean(axis=1)
     C = df.sum(axis=1).sum()/df.count(axis=1).sum()
-    w = df.count(axis=1)/(df.count(axis=1)+(df.count(axis=1).sum()/len(df)))
+    w = df.count(axis=1)/(df.count(axis=1)+df.count(axis=1).mean())
     return ((w*R) + ((1-w)*C))
 
 def main(ARGS):
@@ -249,7 +249,8 @@ def main(ARGS):
         # averaged across all patients
         full_avgs = pd.DataFrame(index=dictionary.values())
         full_avgs['Mean'] = mean_avgs.mean(axis=1)
-        full_avgs['Bayes'] = bayesian_average(mean_avgs)
+        full_avgs['Bayes'] = bayesian_average(ba_avgs)
+        full_avgs.dropna(how='all', inplace=True)
         full_avgs.to_pickle('feature_weights.pkl')
         print(full_avgs.to_string())
     else:
