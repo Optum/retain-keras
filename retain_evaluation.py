@@ -247,10 +247,16 @@ def get_predictions(model, data, model_parameters, ARGS):
                                     use_multiprocessing=True, verbose=1, workers=3)
     return preds
 
-def output_results(info_dict, y_prob, output, inflection_point):
-    if output:     
-        df = pd.DataFrame({'Actual': info_dict["targets"], 'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0)})
-        
+def output_results(info_dict, y_prob, output, inflection_point, raw_score):
+    if output:
+        if raw_score:
+            df = pd.DataFrame({'Actual': info_dict["targets"], 
+                'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0),
+                'Predicted_NotRounded':y_prob})
+        else:
+            df = pd.DataFrame({'Actual': info_dict["targets"], 
+                'Predicted_Rounded': np.where(y_prob>inflection_point, 1, 0)})
+            
         df['target'] = np.where(df['Actual']==df['Predicted_Rounded'], 1, 0)
         if "pids" in info_dict:
             df["IDs"] = info_dict["pids"]
@@ -271,7 +277,7 @@ def main(ARGS):
     precision_recall(info["targets"], probabilities[:, 0, -1], ARGS.omit_graphs)
     lift(info["targets"], probabilities[:, 0, -1], ARGS.omit_graphs)
     probability_calibration(info["targets"], probabilities[:, 0, -1], ARGS.omit_graphs)
-    output_results(info, probabilities[:, 0, -1], ARGS.output_results, ARGS.results_cutoff)
+    output_results(info, probabilities[:, 0, -1], ARGS.output_results, ARGS.results_cutoff, ARGS.output_raw_score)
 
 def parse_arguments(parser):
     """Read user arguments"""
@@ -292,6 +298,8 @@ def parse_arguments(parser):
                         help='The cutoff value for evaluating a prediction as true or false. Must be between 0 and 1')
     parser.add_argument('--output_results', type=str, default='data/evaluation_results.csv',
                         help='Path to place output results.')
+    parser.add_argument('--output_raw_score', action='store_true', default=False,
+                        help='output the raw probability in addition to the Predicted_Rounded')
     parser.add_argument('--include_ids', action='store_true', default=False,
                         help="Whether to include ID's in output results.")
     args = parser.parse_args()
