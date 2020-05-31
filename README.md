@@ -110,6 +110,8 @@ You can quickly test this reimplementation by creating a sample dataset from MIM
 
 You will need to request access to [MIMIC-III](https://mimic.physionet.org/gettingstarted/access/), a de-identified database containing information about clinical care of patients for 11 years of data, to be able to run this script.
 
+If you do not wish to request access to the full data, you can freely download the [MIMIC-III](https://physionet.org/content/mimiciii-demo/1.4/) sample demo data and use it for exploratory benchmarks. 
+
 This script heavily borrows from original [process_mimic.py](https://github.com/mp2893/retain/blob/master/process_mimic.py) created by Edward Choi but is modified to output data in a format specified above. It outputs the necessary files to a user-specified directory and splits them into train and test by user-specified ratio.
 
 Example:

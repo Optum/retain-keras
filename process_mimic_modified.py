@@ -21,6 +21,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from datetime import datetime
+import os
 
 def convert_to_icd9(dx_str):
     if dx_str.startswith('E'):
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     print('Building pid-sortedVisits mapping')
     pid_seq_map = {}
     pid_seq_map_3digit = {}
-    for pid, adm_id_list in pid_adm_map.iteritems():
+    for pid, adm_id_list in pid_adm_map.items():
         if len(adm_id_list) < 2: continue
 
         sorted_list = sorted([(adm_date_map[adm_id], adm_dx_map[adm_id]) for adm_id in adm_id_list])
@@ -113,7 +114,7 @@ if __name__ == '__main__':
     dates = []
     seqs = []
     morts = []
-    for pid, visits in pid_seq_map.iteritems():
+    for pid, visits in pid_seq_map.items():
         pids.append(pid)
         morts.append(pid_dod_map[pid])
         seq = []
@@ -126,7 +127,7 @@ if __name__ == '__main__':
 
     print('Building pids, dates, strSeqs for 3digit ICD9 code')
     seqs_3digit = []
-    for pid, visits in pid_seq_map_3digit.iteritems():
+    for pid, visits in pid_seq_map_3digit.items():
         seq = []
         for visit in visits:
             seq.append(visit[1])
@@ -194,9 +195,11 @@ if __name__ == '__main__':
     data_train_3digit,data_test_3digit = train_test_split(all_data_3digit, train_size=train_proportion, random_state=12345)
     target_train,target_test = train_test_split(all_targets, train_size=train_proportion, random_state=12345)
     #Reverse Dictionary into index:code format
-    types = dict((v,k) for k,v in types.iteritems())
-    types_3digit = dict((v,k) for k,v in types_3digit.iteritems())
+    types = dict((v,k) for k,v in types.items())
+    types_3digit = dict((v,k) for k,v in types_3digit.items())
     #Write out the data
+    if not os.path.exists(out_directory):
+        os.makedirs(out_directory)
     data_train.sort_index().to_pickle(out_directory+'/data_train.pkl')
     data_test.sort_index().to_pickle(out_directory+'/data_test.pkl')
     data_train_3digit.sort_index().to_pickle(out_directory+'/data_train_3digit.pkl')
