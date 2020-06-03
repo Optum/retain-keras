@@ -116,9 +116,9 @@ This script heavily borrows from original [process_mimic.py](https://github.com/
 
 Example:
 
-Run from the MIMIC-III directory after creating RETAIN-Keras_files directory. This will split data with 70% going to training and 30% to test:  
+Run from the MIMIC-III directory. This will split data with 70% going to training and 30% to test:  
 
-`python process_mimic_modified.py ADMISSIONS.csv DIAGNOSES_ICD.csv PATIENTS.csv RETAIN-Keras_files .7`
+`python process_mimic_modified.py ADMISSIONS.csv DIAGNOSES_ICD.csv PATIENTS.csv data .7`
 
 # Licenses and Contributions
 

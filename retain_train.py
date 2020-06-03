@@ -288,6 +288,8 @@ def create_callbacks(model, data, ARGS):
 
 
     #Create callbacks
+    if not os.path.exists(ARGS.directory):
+        os.makedirs(ARGS.directory)
     checkpoint = ModelCheckpoint(filepath=ARGS.directory+'/weights.{epoch:02d}.hdf5')
     log = LogEval(ARGS.directory+'/log.txt', model, data, ARGS)
     return(checkpoint, log)
