@@ -20,10 +20,10 @@ RETAIN has shown to be highly effective for creating predictive models for a mul
 ## Running RETAIN-Keras
 
 ### Requirements
-0. Python (2 or 3)
+0. Python 3
 1. If using GPU: CUDA and CuDNN
-2. Tensorflow
-3. Keras (2.1.3+)
+2. Tensorflow 1.13.1
+3. Keras 2.1.3
 4. Scikit-Learn
 5. Numpy
 6. Pandas
