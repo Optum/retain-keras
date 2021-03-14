@@ -20,7 +20,7 @@ def import_model(path):
     model = load_model(path, custom_objects={'FreezePadding':FreezePadding,
                                              'FreezePadding_Non_Negative':FreezePadding_Non_Negative})
     model_with_attention = Model(model.inputs, model.outputs +\
-                                              [model.get_layer(name='softmax_1').output,
+                                              [model.get_layer(name='softmax_1').output,\
                                                model.get_layer(name='beta_dense_0').output])
     return model, model_with_attention
 
