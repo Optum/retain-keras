@@ -7,24 +7,22 @@ from sklearn.metrics import roc_auc_score, average_precision_score,\
 from sklearn.calibration import calibration_curve
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import keras.backend as K
-from keras.models import load_model
-from keras.preprocessing import sequence
-from keras.constraints import Constraint
-from keras.utils.data_utils import Sequence
-from keras_exp.multigpu import get_available_gpus, make_parallel
+import tensorflow.keras.backend as K
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing import sequence
+from tensorflow.keras.constraints import Constraint
+from tensorflow.keras.utils import Sequence
 
 def import_model(path):
     """Import model from given path and assign it to appropriate devices"""
     K.clear_session()
-    config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+    config = tf.compat.v1.ConfigProto(allow_soft_placement=True, log_device_placement=False)
     config.gpu_options.allow_growth = True
-    tfsess = tf.Session(config=config)
-    K.set_session(tfsess)
+    tfsess = tf.compat.v1.Session(config=config)
+    tf.compat.v1.keras.backend.set_session(tfsess)
     model = load_model(path, custom_objects={'FreezePadding':FreezePadding,
                                              'FreezePadding_Non_Negative':FreezePadding_Non_Negative})
-    if len(get_available_gpus()) > 1:
-        model = make_parallel(model)
+
     return model
 
 def get_model_parameters(model):

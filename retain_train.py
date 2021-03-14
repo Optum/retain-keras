@@ -190,7 +190,7 @@ def model_create(ARGS):
         #Compute alpha, visit attention
         alpha_out = alpha(time_embs)
         alpha_out = L.TimeDistributed(alpha_dense, name='alpha_dense_0')(alpha_out)
-        alpha_out = L.Softmax(axis=1)(alpha_out)
+        alpha_out = L.Softmax(name='softmax_1', axis=1)(alpha_out)
         #Compute beta, codes attention
         beta_out = beta(time_embs)
         beta_out = L.TimeDistributed(beta_dense, name='beta_dense_0')(beta_out)

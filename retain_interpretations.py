@@ -4,23 +4,23 @@ import pickle as pickle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import keras.backend as K
-from keras.models import load_model, Model
-from keras.preprocessing import sequence
-from keras.constraints import Constraint
-from keras.utils.data_utils import Sequence
+import tensorflow.keras.backend as K
+from tensorflow.keras.models import load_model, Model
+from tensorflow.keras.preprocessing import sequence
+from tensorflow.keras.constraints import Constraint
+from tensorflow.keras.utils import Sequence
 
 def import_model(path):
     """Import model from given path and assign it to appropriate devices"""
     K.clear_session()
-    config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+    config = tf.compat.v1.ConfigProto(allow_soft_placement=True, log_device_placement=False)
     config.gpu_options.allow_growth = True
-    tfsess = tf.Session(config=config)
-    K.set_session(tfsess)
+    tfsess = tf.compat.v1.Session(config=config)
+    tf.compat.v1.keras.backend.set_session(tfsess)
     model = load_model(path, custom_objects={'FreezePadding':FreezePadding,
                                              'FreezePadding_Non_Negative':FreezePadding_Non_Negative})
     model_with_attention = Model(model.inputs, model.outputs +\
-                                              [model.get_layer(name='softmax_1').output,\
+                                              [model.get_layer(name='softmax_1').output,
                                                model.get_layer(name='beta_dense_0').output])
     return model, model_with_attention
 
@@ -217,7 +217,6 @@ def main(ARGS):
     model_parameters = get_model_parameters(model)
     print('Reading Data')
     data, dictionary = read_data(model_parameters, ARGS.path_data, ARGS.path_dictionary)
-    data_generator = SequenceBuilder(data, model_parameters, ARGS)
     probabilities = get_predictions(model, data, model_parameters, ARGS)
     ARGS.batch_size = 1
     data_generator = SequenceBuilder(data, model_parameters, ARGS)
