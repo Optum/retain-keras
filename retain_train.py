@@ -4,15 +4,14 @@ import argparse
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import keras.layers as L
-from keras import backend as K
-from keras.models import Model
-from keras.callbacks import ModelCheckpoint, Callback
-from keras.preprocessing import sequence
-from keras.utils.data_utils import Sequence
-from keras.regularizers import l2
-from keras.constraints import non_neg, Constraint
-from keras_exp.multigpu import get_available_gpus, make_parallel
+import tensorflow.keras.layers as L
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.callbacks import ModelCheckpoint, Callback
+from tensorflow.keras.preprocessing import sequence
+from tensorflow.keras.utils import Sequence
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras.constraints import non_neg, Constraint
 from sklearn.metrics import roc_auc_score, average_precision_score, precision_recall_curve
 
 
@@ -142,10 +141,6 @@ def model_create(ARGS):
             output_constraint = non_neg()
 
 
-
-        #Get available gpus , returns empty list if none
-        glist = get_available_gpus()
-
         def reshape(data):
             """Reshape the context vectors to 3D vector"""
             return K.reshape(x=data, shape=(K.shape(data)[0], 1, reshape_size))
@@ -156,8 +151,7 @@ def model_create(ARGS):
         #Calculate embedding for each code and sum them to a visit level
         codes_embs_total = L.Embedding(ARGS.num_codes+1,
                                        ARGS.emb_size,
-                                       name='embedding',
-                                       embeddings_constraint=embeddings_constraint)(codes)
+                                       name='embedding')(codes)
         codes_embs = L.Lambda(lambda x: K.sum(x, axis=2))(codes_embs_total)
         #Numeric input if needed
         if ARGS.numeric_size:
@@ -182,18 +176,10 @@ def model_create(ARGS):
         #This implementation uses Bidirectional LSTM instead of reverse order
         #    (see https://github.com/mp2893/retain/issues/3 for more details)
 
-
-        #If training on GPU and Tensorflow use CuDNNLSTM for much faster training
-        if glist:
-            alpha = L.Bidirectional(L.CuDNNLSTM(ARGS.recurrent_size, return_sequences=True),
-                                    name='alpha')
-            beta = L.Bidirectional(L.CuDNNLSTM(ARGS.recurrent_size, return_sequences=True),
-                                   name='beta')
-        else:
-            alpha = L.Bidirectional(L.LSTM(ARGS.recurrent_size,
+        alpha = L.Bidirectional(L.LSTM(ARGS.recurrent_size,
                                            return_sequences=True, implementation=2),
                                     name='alpha')
-            beta = L.Bidirectional(L.LSTM(ARGS.recurrent_size,
+        beta = L.Bidirectional(L.LSTM(ARGS.recurrent_size,
                                           return_sequences=True, implementation=2),
                                    name='beta')
 
@@ -204,7 +190,7 @@ def model_create(ARGS):
         #Compute alpha, visit attention
         alpha_out = alpha(time_embs)
         alpha_out = L.TimeDistributed(alpha_dense, name='alpha_dense_0')(alpha_out)
-        alpha_out = L.Softmax(axis=1)(alpha_out)
+        alpha_out = L.Softmax(name='softmax_1', axis=1)(alpha_out)
         #Compute beta, codes attention
         beta_out = beta(time_embs)
         beta_out = L.TimeDistributed(beta_dense, name='beta_dense_0')(beta_out)
@@ -229,18 +215,11 @@ def model_create(ARGS):
 
     #Set Tensorflow to grow GPU memory consumption instead of grabbing all of it at once
     K.clear_session()
-    config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+    config = tf.compat.v1.ConfigProto(allow_soft_placement=True, log_device_placement=False)
     config.gpu_options.allow_growth = True
-    tfsess = tf.Session(config=config)
-    K.set_session(tfsess)
-    #If there are multiple GPUs set up a multi-gpu model
-    glist = get_available_gpus()
-    if len(glist) > 1:
-        with tf.device('/cpu:0'):
-            model = retain(ARGS)
-        model_final = make_parallel(model, glist)
-    else:
-        model_final = retain(ARGS)
+    tfsess = tf.compat.v1.Session(config=config)
+    tf.compat.v1.keras.backend.set_session(tfsess)
+    model_final = retain(ARGS)
 
     #Compile the model - adamax has produced best results in our experiments
     model_final.compile(optimizer='adamax', loss='binary_crossentropy', metrics=['accuracy'],

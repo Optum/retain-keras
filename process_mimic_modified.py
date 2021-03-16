@@ -1,8 +1,8 @@
 # This script processes MIMIC-III dataset and builds longitudinal diagnosis records for patients with at 2+ visits.
 # The output data are 4 pickled pandas dataframes suitable for training RETAIN-Keras
-# Orginally Written by Edward Choi (mp2893@gatech.edu) https://github.com/mp2893/retain
+# Originally Written by Edward Choi (mp2893@gatech.edu) https://github.com/mp2893/retain
 # Modified by Timothy Rosenflanz (timothy.rosenflanz@optum.com) to work with RETAIN-Keras
-# Usage: Put this script to the foler where MIMIC-III CSV files are located. Then execute the below command.
+# Usage: Put this script to the folder where MIMIC-III CSV files are located. Then execute the below command.
 # python process_mimic_modified.py ADMISSIONS.csv DIAGNOSES_ICD.csv PATIENTS.csv <output directory> <train data proportion>
 
 # Output files
@@ -10,8 +10,8 @@
 # data_test.pkl: Pickled dataframe used for testing containing the codes and to_event sequences as specified in the README
 # data_train_3digit.pkl: Pickled dataframe used for training containing the 3 digit codes and to_event sequences as specified in the README
 # data_test_3digit.pkl: Pickled dataframe used for testing containing the 3 digit codes and to_event sequences as specified in the README
-# target_train.pkl: Pickled dataframe containing target lables for training as specified in the README
-# target_test.pkl: Pickled dataframe containing target lables for testing as specified in the README
+# target_train.pkl: Pickled dataframe containing target labels for training as specified in the README
+# target_test.pkl: Pickled dataframe containing target labels for testing as specified in the README
 # dictionary.pkl: Python dictionary that maps string diagnosis codes to integer diagnosis codes.
 # dictionary_3digit.pkl: Python dictionary that maps string diagnosis codes to integer 3 digit diagnosis codes.
 

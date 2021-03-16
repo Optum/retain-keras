@@ -11,8 +11,6 @@ RETAIN has shown to be highly effective for creating predictive models for a mul
 * Simpler Keras code with Tensorflow backend
 * Ability to use extra numeric inputs of fixed size that can hold numeric information about the patients visit such as patient's age, quantity of drug prescribed, or blood pressure
 * Improved embedding logic that avoids using large dense inputs
-* Ability to create multi-gpu models (experimental)
-* Switch to CuDNN implementations of RNN layers that provides immense training speed ups
 * Ability to evaluate models during training
 * Ability to train models with only positive contributions which improves performance
 * Extra script to evaluate the model and output several helper graphics
@@ -22,17 +20,11 @@ RETAIN has shown to be highly effective for creating predictive models for a mul
 ### Requirements
 0. Python 3
 1. If using GPU: CUDA and CuDNN
-2. Tensorflow 1.13.1
-3. Keras 2.1.3
-4. Scikit-Learn
-5. Numpy
-6. Pandas
-7. Matplotlib (evaluation)
-8. [Keras-experiments by Alex Volkov](https://github.com/avolkov1/keras_experiments):
-
-    pip install git+https://github.com/avolkov1/keras_experiments/
-
-    Enables multi-gpu support with reliable savings of the model
+2. Tensorflow 2.0+
+3. Scikit-Learn
+4. Numpy
+5. Pandas
+6. Matplotlib (evaluation)
 
 ## Installation
 1. Clone down the repository
@@ -64,9 +56,9 @@ retain_train.py has multiple arguments to customize the training and model:
 * `--batch_size`: Integer Batch Size for training. Default: 32
 * `--dropout_input`: Float Dropout rate for embedding of codes and numeric features (0 to 1). Default: 0.0
 * `--dropout_context`: Float Dropout rate for context vector (0 to 1). Default: 0.0
-* `--l2`: Float L2 regularitzation value for layers. Default: 0.0
+* `--l2`: Float L2 regularization value for layers. Default: 0.0
 * `--directory`: String Directory to save the model and the log file to. Default: 'Model' (directory needs to exist otherwise error will be thrown)
-* `--allow_negative`: Allows negative weights for embeddings/attentions (original RETAIN implementaiton allows it but forcing non-negative weights have shown to perform better on a range of tasks). Default: off
+* `--allow_negative`: Allows negative weights for embeddings/attentions (original RETAIN implementation allows it but forcing non-negative weights have shown to perform better on a range of tasks). Default: off
 
 ## Evaluation Arguments
 
