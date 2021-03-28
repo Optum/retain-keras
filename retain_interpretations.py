@@ -190,20 +190,7 @@ def read_data(model_parameters, path_data, path_dictionary):
     return data_output, dictionary
 
 def get_importances(alphas, betas, patient_data, model_parameters, dictionary):
-    """Construct dataframes that interprets each visit of the given patient
-
-    :param alphas: X
-    :type alphas: X
-    :param betas: X
-    :type betas: X
-    :param patient_data: array(s) for features (e.g. ['to_event_ordered','code_ordered','numeric_ordered'])
-    :type patient_data: list[class:`numpy.ndarray`]
-    :param str model_parameters: parameters of model
-    :param dictionary: X
-    :type dictionary: X
-    :return: 1-d array of scores for being in positive class
-    :rtype: :class:`numpy.ndarray`
-    """
+    """Construct dataframes that interprets each visit of the given patient"""
 
     importances = []
     codes = patient_data[0][0]
