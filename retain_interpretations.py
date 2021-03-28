@@ -169,8 +169,8 @@ def read_data(model_parameters, path_data, path_dictionary):
 
     :param model_parameters: parameters of model
     :type model_parameters: str
-    :param path_data: path to test data
-    :param path_dictionary: path to code idx dictionary
+    :param str path_data: path to test data
+    :param str path_dictionary: path to code idx dictionary
     :return: tuple for data and classifier arrays
     :rtype: tuple( list[class:`numpy.ndarray`] , :class:`numpy.ndarray`)
     """
@@ -190,7 +190,21 @@ def read_data(model_parameters, path_data, path_dictionary):
     return data_output, dictionary
 
 def get_importances(alphas, betas, patient_data, model_parameters, dictionary):
-    """Construct dataframes that interpret each visit of the given patient"""
+    """Construct dataframes that interprets each visit of the given patient
+
+    :param alphas: X
+    :type alphas: X
+    :param betas: X
+    :type betas: X
+    :param patient_data: array(s) for features (e.g. ['to_event_ordered','code_ordered','numeric_ordered'])
+    :type patient_data: list[class:`numpy.ndarray`]
+    :param str model_parameters: parameters of model
+    :param dictionary: X
+    :type dictionary: X
+    :return: 1-d array of scores for being in positive class
+    :rtype: :class:`numpy.ndarray`
+    """
+
     importances = []
     codes = patient_data[0][0]
     index = 1
@@ -232,18 +246,7 @@ def get_importances(alphas, betas, patient_data, model_parameters, dictionary):
     return importances
 
 def get_predictions(model, data, model_parameters, ARGS):
-    """Get Model Predictions
-
-    :param model: trained Keras model
-    :type model: :class:`tensorflow.keras.engine.training.Model`
-    :param data: array(s) for features (e.g. ['to_event_ordered','code_ordered','numeric_ordered'])
-    :type data: list[class:`numpy.ndarray`]
-    :param str model_parameters: parameters of model
-    :param ARGS: Arguments object containing user-specified parameters
-    :type ARGS: :class:`argparse.Namespace`
-    :return: 1-d array of scores for being in positive class
-    :rtype: :class:`numpy.ndarray`
-    """
+    """Construct dataframes that interpret each visit of the given patient"""
 
     test_generator = SequenceBuilder(data, model_parameters, ARGS)
     preds = model.predict_generator(generator=test_generator, max_queue_size=15,

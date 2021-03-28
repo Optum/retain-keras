@@ -202,7 +202,7 @@ def roc(y_true, y_prob, graph):
     :type y_true: :class:`numpy.array`
     :param y_prob: NumPy array of predicted target values
     :type y_prob: :class:`numpy.array`
-    :param graph: Option to plot + save probability calibration curves
+    :param graph: Option to plot + save ROC curves
     :type graph: bool
     """
 

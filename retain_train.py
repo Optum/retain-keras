@@ -20,7 +20,7 @@ class SequenceBuilder(Sequence):
     Class to properly construct data into sequences prior to training.
 
     :param Sequence: Customized Sequence class for generating batches of data
-    :type Sequence: :class:`tensorflow.keras.utils.data_utils.Sequence`
+    :type Sequence: :class:`tensorflow.keras.utils.Sequence`
     :returns: Padded, dense data used for Sequence construction (codes,visits,numerics)
     :rtype: :class:`ndarray`
     """
@@ -35,8 +35,8 @@ class SequenceBuilder(Sequence):
         :type target: :class:`numpy.ndarray`
         :param batch_size: Number of samples in each batch
         :type batch_size: int
-        :param ARGS: Other ancillary parameters
-        :type ARGS: dict
+        :param ARGS: Arguments object containing user-specified parameters
+        :type ARGS: :class:`argparse.Namespace`
         :param target_out: If `True` (default), then return the target values
         :type target_out: bool
         :returns: data sequences (codes, visits, numerics)
