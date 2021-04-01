@@ -64,7 +64,14 @@ def get_model_parameters(model):
     return params
 
 class FreezePadding_Non_Negative(Constraint):
-    """Freezes the last weight to be near 0 and prevents non-negative embeddings"""
+    """ Freezes the last weight to be near 0 and prevents non-negative embeddings
+
+    :param Constraint: Keras sequence constraint
+    :type Constraint: :class:`tensorflow.keras.constraints.Constraint`
+    :return: padded tensorflow tensor
+    :rtype: :class:`tensorflow.Tensor`
+    """
+
     def __call__(self, w):
         other_weights = K.cast(K.greater_equal(w, 0)[:-1], K.floatx())
         last_weight = K.cast(K.equal(K.reshape(w[-1, :], (1, K.shape(w)[1])), 0.), K.floatx())
@@ -73,7 +80,14 @@ class FreezePadding_Non_Negative(Constraint):
         return w
 
 class FreezePadding(Constraint):
-    """Freezes the last weight to be near 0."""
+    """ Freezes the last weight to be near 0.
+
+    :param Constraint: Keras sequence constraint
+    :type Constraint: :class:`tensorflow.keras.constraints.Constraint`
+    :return: padded tensorflow tensor
+    :rtype: :class:`tensorflow.Tensor`
+    """
+
     def __call__(self, w):
         other_weights = K.cast(K.ones(K.shape(w))[:-1], K.floatx())
         last_weight = K.cast(K.equal(K.reshape(w[-1, :], (1, K.shape(w)[1])), 0.), K.floatx())
@@ -82,7 +96,12 @@ class FreezePadding(Constraint):
         return w
 
 class SequenceBuilder(Sequence):
-    """Generate Batches of data"""
+    """Class to properly construct data to sequences
+
+    :param Sequence: Customized Sequence class for generating batches of data
+    :type Sequence: :class:`tensorflow.keras.utils.Sequence`
+    """
+
     def __init__(self, data, model_parameters, ARGS):
         #Receive all appropriate data
         self.codes = data[0]
@@ -110,7 +129,7 @@ class SequenceBuilder(Sequence):
     def __getitem__(self, idx):
         """Get batch of specific index"""
         def pad_data(data, length_visits, length_codes, pad_value=0):
-            """Pad data to desired number of visiits and codes inside each visit"""
+            """Pad data to desired number of visits and codes inside each visit"""
             zeros = np.full((len(data), length_visits, length_codes), pad_value)
             for steps, mat in zip(data, zeros):
                 if steps != [[-1]]:
@@ -146,7 +165,16 @@ class SequenceBuilder(Sequence):
 
 
 def read_data(model_parameters, path_data, path_dictionary):
-    """Read the data from provided paths and assign it into lists"""
+    """Read test data used for scoring
+
+    :param model_parameters: parameters of model
+    :type model_parameters: str
+    :param str path_data: path to test data
+    :param str path_dictionary: path to code idx dictionary
+    :return: tuple for data and classifier arrays
+    :rtype: tuple( list[class:`numpy.ndarray`] , :class:`numpy.ndarray`)
+    """
+
     data = pd.read_pickle(path_data)
     data_output = [data['codes'].values]
 
@@ -162,7 +190,8 @@ def read_data(model_parameters, path_data, path_dictionary):
     return data_output, dictionary
 
 def get_importances(alphas, betas, patient_data, model_parameters, dictionary):
-    """Construct dataframes that interpret each visit of the given patient"""
+    """Construct dataframes that interprets each visit of the given patient"""
+
     importances = []
     codes = patient_data[0][0]
     index = 1
@@ -204,7 +233,8 @@ def get_importances(alphas, betas, patient_data, model_parameters, dictionary):
     return importances
 
 def get_predictions(model, data, model_parameters, ARGS):
-    """Get Model Predictions"""
+    """Construct dataframes that interpret each visit of the given patient"""
+
     test_generator = SequenceBuilder(data, model_parameters, ARGS)
     preds = model.predict_generator(generator=test_generator, max_queue_size=15,
                                     use_multiprocessing=True, verbose=1, workers=3)

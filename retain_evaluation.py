@@ -14,7 +14,13 @@ from tensorflow.keras.constraints import Constraint
 from tensorflow.keras.utils import Sequence
 
 def import_model(path):
-    """Import model from given path and assign it to appropriate devices"""
+    """Import model from training phase
+
+    :param str path: path to HDF5 file
+    :return: Keras model
+    :rtype: :class:`tensorflow.keras.Model`
+    """
+
     K.clear_session()
     config = tf.compat.v1.ConfigProto(allow_soft_placement=True, log_device_placement=False)
     config.gpu_options.allow_growth = True
@@ -26,7 +32,14 @@ def import_model(path):
     return model
 
 def get_model_parameters(model):
-    """Extract model arguments that were used during training"""
+    """ Get model parameters of interest
+
+    :param model: Keras model
+    :type model: :class:`tensorflow.keras.Model`
+    :return: parameters of model
+    :rtype: :class:`ModelParameters`
+    """
+
     class ModelParameters:
         """Helper class to store model parametesrs in the same format as ARGS"""
         def __init__(self):
@@ -48,7 +61,14 @@ def get_model_parameters(model):
     return params
 
 class FreezePadding_Non_Negative(Constraint):
-    """Freezes the last weight to be near 0 and prevents non-negative embeddings"""
+    """ Freezes the last weight to be near 0 and prevents non-negative embeddings
+
+    :param Constraint: Keras sequence constraint
+    :type Constraint: :class:`tensorflow.keras.constraints.Constraint`
+    :return: padded tensorflow tensor
+    :rtype: :class:`tensorflow.Tensor`
+    """
+
     def __call__(self, w):
         other_weights = K.cast(K.greater_equal(w, 0)[:-1], K.floatx())
         last_weight = K.cast(K.equal(K.reshape(w[-1, :], (1, K.shape(w)[1])), 0.), K.floatx())
@@ -57,7 +77,14 @@ class FreezePadding_Non_Negative(Constraint):
         return w
 
 class FreezePadding(Constraint):
-    """Freezes the last weight to be near 0."""
+    """ Freezes the last weight to be near 0.
+
+    :param Constraint: Keras sequence constraint
+    :type Constraint: :class:`tensorflow.keras.constraints.Constraint`
+    :return: padded tensorflow tensor
+    :rtype: :class:`tensorflow.Tensor`
+    """
+
     def __call__(self, w):
         other_weights = K.cast(K.ones(K.shape(w))[:-1], K.floatx())
         last_weight = K.cast(K.equal(K.reshape(w[-1, :], (1, K.shape(w)[1])), 0.), K.floatx())
@@ -66,7 +93,17 @@ class FreezePadding(Constraint):
         return w
 
 def precision_recall(y_true, y_prob, graph):
-    """Print Precision Recall Statistics and Graph"""
+    """
+    Get precision recall statistics
+
+    :param y_true: NumPy array of true target values
+    :type y_true: :class:`numpy.array`
+    :param y_prob: NumPy array of predicted target values
+    :type y_prob: :class:`numpy.array`
+    :param graph: Option to plot + save precision-recall curve
+    :type graph: bool
+    """
+
     average_precision = average_precision_score(y_true, y_prob)
     if graph:
         precision, recall, _ = precision_recall_curve(y_true, y_prob)
@@ -85,6 +122,17 @@ def precision_recall(y_true, y_prob, graph):
         print('Average Precision %0.3f' % average_precision)
 
 def probability_calibration(y_true, y_prob,graph):
+    """
+    Get probability calibration
+
+    :param y_true: NumPy array of true target values
+    :type y_true: :class:`numpy.array`
+    :param y_prob: NumPy array of predicted target values
+    :type y_prob: :class:`numpy.array`
+    :param graph: Option to plot + save probability calibration curves
+    :type graph: bool
+    """
+
     if graph:
         fig_index = 1
         name = 'My pred'
@@ -117,7 +165,17 @@ def probability_calibration(y_true, y_prob,graph):
         plt.savefig('calibration.png')
 
 def lift(y_true, y_prob, graph):
-    """Print Precision Recall Statistics and Graph"""
+    """
+    Get lift chart
+
+    :param y_true: NumPy array of true target values
+    :type y_true: :class:`numpy.array`
+    :param y_prob: NumPy array of predicted target values
+    :type y_prob: :class:`numpy.array`
+    :param graph: Option to plot + save lift chart
+    :type graph: bool
+    """
+
     prevalence = sum(y_true)/len(y_true)
     average_lift = average_precision_score(y_true, y_prob) / prevalence
     if graph:
@@ -137,7 +195,17 @@ def lift(y_true, y_prob, graph):
         print('Average Lift %0.3f' % average_lift)
 
 def roc(y_true, y_prob, graph):
-    """Print ROC Statistics and Graph"""
+    """
+    Get ROC statistics
+
+    :param y_true: NumPy array of true target values
+    :type y_true: :class:`numpy.array`
+    :param y_prob: NumPy array of predicted target values
+    :type y_prob: :class:`numpy.array`
+    :param graph: Option to plot + save ROC curves
+    :type graph: bool
+    """
+
     roc_auc = roc_auc_score(y_true, y_prob)
     if graph:
         fpr, tpr, _ = roc_curve(y_true, y_prob)
@@ -156,7 +224,12 @@ def roc(y_true, y_prob, graph):
         print('ROC-AUC %0.3f' % roc_auc)
 
 class SequenceBuilder(Sequence):
-    """Generate Batches of data"""
+    """Class to properly construct data to sequences
+
+    :param Sequence: Customized Sequence class for generating batches of data
+    :type Sequence: :class:`tensorflow.keras.utils.data_utils.Sequence`
+    """
+
     def __init__(self, data, model_parameters, ARGS):
         #Receive all appropriate data
         self.codes = data[0]
@@ -185,7 +258,7 @@ class SequenceBuilder(Sequence):
     def __getitem__(self, idx):
         """Get batch of specific index"""
         def pad_data(data, length_visits, length_codes, pad_value=0):
-            """Pad data to desired number of visiits and codes inside each visit"""
+            """Pad data to desired number of visits and codes inside each visit"""
             zeros = np.full((len(data), length_visits, length_codes), pad_value)
             for steps, mat in zip(data, zeros):
                 if steps != [[-1]]:
@@ -221,7 +294,16 @@ class SequenceBuilder(Sequence):
 
 
 def read_data(model_parameters, ARGS):
-    """Read the data from provided paths and assign it into lists"""
+    """Read test data used for scoring
+
+    :param model_parameters: parameters of model
+    :type model_parameters: str
+    :param ARGS: Arguments object containing user-specified parameters
+    :type ARGS: :class:`argparse.Namespace`
+    :return: tuple for data and classifier arrays
+    :rtype: tuple( list[class:`numpy.ndarray`] , :class:`numpy.ndarray`)
+    """
+
     data = pd.read_pickle(ARGS.path_data)
     y = pd.read_pickle(ARGS.path_target)['target'].values
     data_output = [data['codes'].values]
@@ -233,7 +315,19 @@ def read_data(model_parameters, ARGS):
     return (data_output, y)
 
 def get_predictions(model, data, model_parameters, ARGS):
-    """Get Model Predictions"""
+    """Get Model Predictions
+
+    :param model: trained Keras model
+    :type model: :class:`tensorflow.keras.Model`
+    :param data: array(s) for features (e.g. ['to_event_ordered','code_ordered','numeric_ordered'])
+    :type data: list[class:`numpy.ndarray`]
+    :param str model_parameters: parameters of model
+    :param ARGS: Arguments object containing user-specified parameters
+    :type ARGS: :class:`argparse.Namespace`
+    :return: 1-d array of scores for being in positive class
+    :rtype: :class:`numpy.ndarray`
+    """
+
     test_generator = SequenceBuilder(data, model_parameters, ARGS)
     preds = model.predict_generator(generator=test_generator, max_queue_size=15,
                                     use_multiprocessing=True, verbose=1, workers=3)

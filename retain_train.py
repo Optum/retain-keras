@@ -16,8 +16,33 @@ from sklearn.metrics import roc_auc_score, average_precision_score, precision_re
 
 
 class SequenceBuilder(Sequence):
-    """Generate Batches of data"""
+    """
+    Class to properly construct data into sequences prior to training.
+
+    :param Sequence: Customized Sequence class for generating batches of data
+    :type Sequence: :class:`tensorflow.keras.utils.Sequence`
+    :returns: Padded, dense data used for Sequence construction (codes,visits,numerics)
+    :rtype: :class:`ndarray`
+    """
+
     def __init__(self, data, target, batch_size, ARGS, target_out=True):
+        """
+        Instantiates the code.
+
+        :param data: Training data sequences (codes, visits, numerics)
+        :type data: list[:class:`ndarray`]
+        :param target: List of target values
+        :type target: :class:`numpy.ndarray`
+        :param batch_size: Number of samples in each batch
+        :type batch_size: int
+        :param ARGS: Arguments object containing user-specified parameters
+        :type ARGS: :class:`argparse.Namespace`
+        :param target_out: If `True` (default), then return the target values
+        :type target_out: bool
+        :returns: data sequences (codes, visits, numerics)
+        :rtype: list[:class:`ndarray`]
+        """
+
         #Receive all appropriate data
         self.codes = data[0]
         index = 1
@@ -38,17 +63,42 @@ class SequenceBuilder(Sequence):
         #self.balance = (1-(float(sum(target))/len(target)))/(float(sum(target))/len(target))
 
     def __len__(self):
-        """Compute number of batches.
-        Add extra batch if the data doesn't exactly divide into batches
         """
+        Compute number of batches.
+        Add extra batch if the data doesn't exactly divide into batches
+
+        :return: Number of batches per epoch
+        :rtype: int
+        """
+
         if len(self.codes)%self.batch_size == 0:
             return len(self.codes) // self.batch_size
         return len(self.codes) // self.batch_size+1
 
     def __getitem__(self, idx):
-        """Get batch of specific index"""
+        """
+        Get batch of specific index.
+
+        :param idx: The index number for the batch to return
+        :type idx: int
+        :return: Padded data sequences (codes, visits, numerics)
+        :rtype: list[:class:`ndarray`]
+        """
+
         def pad_data(data, length_visits, length_codes, pad_value=0):
-            """Pad data to desired number of visiits and codes inside each visit"""
+            """
+            Pad numpy array to shift sparse matrix to dense matrix
+
+            :param data: Training data sequences (codes, visits, numerics)
+            :type data: list[:class:`ndarray`]
+            :param int length_visits: max visit count in batch
+            :param int length_codes: max codes length in batch
+            :param pad_value: numeric value to represent padding, defaults to 0
+            :type pad_value: int, optional
+            :return: 'dense' array with padding for codes and visits
+            :rtype: :class:`numpy.ndarray`
+            """
+
             zeros = np.full((len(data), length_visits, length_codes), pad_value)
             for steps, mat in zip(data, zeros):
                 if steps != [[-1]]:
@@ -90,7 +140,15 @@ class SequenceBuilder(Sequence):
         return outputs
 
 class FreezePadding_Non_Negative(Constraint):
-    """Freezes the last weight to be near 0 and prevents non-negative embeddings"""
+    """
+    Freezes the last weight to be near 0 - permit negative weights.
+
+    :param Constraint: Keras sequence constraint
+    :type Constraint: :class:`tensorflow.keras.constraints.Constraint`
+    :return: padded tensor or variable
+    :rtype: :class:`tensorflow.Tensor`
+    """
+
     def __call__(self, w):
         other_weights = K.cast(K.greater_equal(w, 0)[:-1], K.floatx())
         last_weight = K.cast(K.equal(K.reshape(w[-1, :], (1, K.shape(w)[1])), 0.), K.floatx())
@@ -99,7 +157,15 @@ class FreezePadding_Non_Negative(Constraint):
         return w
 
 class FreezePadding(Constraint):
-    """Freezes the last weight to be near 0."""
+    """
+    Freezes the last weight to be near 0 - don't permit negative weights.
+
+    :param Constraint: Keras sequence constraint
+    :type Constraint: :class:`tensorflow.keras.constraints.Constraint`
+    :return: padded tensor or variable
+    :rtype: :class:`tensorflow.Tensor`
+    """
+
     def __call__(self, w):
         other_weights = K.cast(K.ones(K.shape(w))[:-1], K.floatx())
         last_weight = K.cast(K.equal(K.reshape(w[-1, :], (1, K.shape(w)[1])), 0.), K.floatx())
@@ -109,6 +175,7 @@ class FreezePadding(Constraint):
 
 def read_data(ARGS):
     """Read the data from provided paths and assign it into lists"""
+
     data_train_df = pd.read_pickle(ARGS.path_data_train)
     data_test_df = pd.read_pickle(ARGS.path_data_test)
     y_train = pd.read_pickle(ARGS.path_target_train)['target'].values
@@ -125,9 +192,25 @@ def read_data(ARGS):
     return (data_output_train, y_train, data_output_test, y_test)
 
 def model_create(ARGS):
-    """Create and Compile model and assign it to provided devices"""
+    """
+    Create tensorflow DAG for training a model, and then compile/train
+    the model at the end.
+
+    :param ARGS: Arguments object containing user-specified parameters
+    :type ARGS: :class:`argparse.Namespace`
+    :return: trained/compiled Keras model
+    :rtype: :class:`tensorflow.keras..Model`
+    """
+
     def retain(ARGS):
-        """Create the model"""
+        """
+        Helper function to create DAG of Keras Layers via functional API approach.
+        The Keras Layer design is mimicking RETAIN architecture.
+        :param ARGS: Arguments object containing user-specified parameters
+        :type ARGS: :class:`argparse.Namespace`
+        :return: Keras model
+        :rtype: :class:`tensorflow.keras.Model`
+        """
 
         #Define the constant for model saving
         reshape_size = ARGS.emb_size+ARGS.numeric_size
@@ -228,10 +311,36 @@ def model_create(ARGS):
     return model_final
 
 def create_callbacks(model, data, ARGS):
-    """Create the checkpoint and logging callbacks"""
+    """At the end of each epoch, determine various callback statistics (e.g. ROC-AUC)
+
+    :param model: Keras model
+    :type model: :class:`tensorflow.keras.Model`
+    :param data: Validation data - data sequences (codes, visits, numeric values) and classifier.
+    :type data: tuple( list( :class:`ndarray`), :class:`ndarray`)
+    :param ARGS: Arguments object containing user-specified parameters
+    :type ARGS: :class:`argparse.Namespace`
+    :return: various callback objects - naming convention for saved HDF5 files, custom logging class, \
+    reduced learning rate
+    :rtype: tuple(:class:`tensorflow.keras.callbacks.ModelCheckpoint`, :class:`LogEval`, \
+    :class:`tensorflow.keras.callbacks.ReduceLROnPlateau`)
+    """
+
     class LogEval(Callback):
         """Logging Callback"""
         def __init__(self, filepath, model, data, ARGS, interval=1):
+            """Constructor for logging class
+
+            :param str filepath: path for log file & Keras HDF5 files
+            :param model: model from training used for end-of-epoch analytics
+            :type model: :class:`keras.engine.training.Model`
+            :param data: Validation data used for end-of-epoch analytics \
+            (e.g. data sequences (codes, visits, numerics) and classifier)
+            :type data: tuple(list[:class:`ndarray`],:class:`ndarray`)
+            :param ARGS: Arguments object containing user-specified parameters
+            :type ARGS: :class:`argparse.Namespace`
+            :param interval: Interval for logging (e.g. every epoch), defaults to 1
+            :type interval: int, optional
+            """
 
             super(Callback, self).__init__()
             self.filepath = filepath
@@ -274,7 +383,24 @@ def create_callbacks(model, data, ARGS):
     return(checkpoint, log)
 
 def train_model(model, data_train, y_train, data_test, y_test, ARGS):
-    """Train the Model with appropriate callbacks and generator"""
+    """
+    Class to hold callback artifacts, Sequence builder of training data, model training
+    generator
+
+    :param model: Keras model
+    :type model: :class:`tensorflow.keras.Model`
+    :param data_train: List with sub-arrays for medical codes, visits, and demographics
+    :type data_train: list(:class:`numpy.ndarray`)
+    :param y_train: Array with classifiers for training set
+    :type y_train: :class:`numpy.ndarray`
+    :param data_test: List with sub-arrays for medical codes, visits, and demographics
+    :type data_test: list(:class:`numpy.ndarray`)
+    :param y_test: Array with classifiers for test set
+    :type y_test: :class:`numpy.ndarray`
+    :param ARGS: Arguments object containing user-specified parameters
+    :type ARGS: :class:`argparse.Namespace`
+    """
+
     checkpoint, log = create_callbacks(model, (data_test, y_test), ARGS)
     train_generator = SequenceBuilder(data=data_train, target=y_train,
                                       batch_size=ARGS.batch_size, ARGS=ARGS)
