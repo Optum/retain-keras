@@ -95,9 +95,11 @@ Run from the MIMIC-III directory. This will split data with 70% going to trainin
 
 `python process_mimic_modified.py ADMISSIONS.csv DIAGNOSES_ICD.csv PATIENTS.csv data .7`
 
-### Licenses and Contributions
+### License
 
 Please review the [license](LICENSE), [notice](Notice.txt) and other [documents](docs/) before using the code in this repository or making a contribution to the repository
+
+### Contributing
 
 To contribute features, bug fixes, tests, examples, or documentation, please submit a pull request with a description of your proposed changes or additions.
 
