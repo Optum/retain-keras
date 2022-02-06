@@ -390,7 +390,6 @@ def create_callbacks(model, data, ARGS):
 
         def on_epoch_end(self, epoch, logs={}):
 
-
             # Compute ROC-AUC and average precision the validation data every interval epochs
             if epoch % self.interval == 0:
 
