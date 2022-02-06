@@ -22,7 +22,7 @@ conda activate retain
 pip install -r requirements.txt
 ```
 
-###  Running the code
+### Running the code
 
 - **Training**: - `python3 retain_train.py --num_codes=x --additional arguments`
 - **Evaluating**: - `python3 retain_evaluation.py --additional arguments`

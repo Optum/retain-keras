@@ -19,6 +19,7 @@
 import os
 import sys
 import pickle
+import regex as re
 import numpy as np
 import pandas as pd
 from datetime import datetime
@@ -107,7 +108,7 @@ if __name__ == "__main__":
     infd = open(diagnosis_file, "r")
     infd.readline()
     for line in infd:
-        tokens = line.strip().split(",")
+        tokens = re.sub('"|\s|\n','',line).split(',')
         adm_id = int(tokens[2])
         dx_str = "D_" + convert_to_icd9(tokens[4][1:-1])
         dx_str_3digit = "D_" + convert_to_3digit_icd9(tokens[4][1:-1])
