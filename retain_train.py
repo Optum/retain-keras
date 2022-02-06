@@ -389,22 +389,25 @@ def create_callbacks(model, data, ARGS):
             self.model = model
 
         def on_epoch_end(self, epoch, logs={}):
+
+
             # Compute ROC-AUC and average precision the validation data every interval epochs
             if epoch % self.interval == 0:
-                # Compute predictions of the model
-                y_pred = [
-                    x[-1]
-                    for x in self.model.predict_generator(
-                        self.generator,
-                        verbose=0,
-                        use_multiprocessing=True,
-                        workers=5,
-                        max_queue_size=5,
+
+                # Generate predictions
+                preds = []
+                for x in self.generator:
+                    batch_pred = self.model.predict_on_batch(
+                        x=x,
                     )
-                ]
+                    preds.append(batch_pred.flatten())
+                y_pred = np.concatenate(preds, axis=0)
+
+                # Compute performance
                 score_roc = roc_auc_score(self.y_test, y_pred)
                 score_pr = average_precision_score(self.y_test, y_pred)
-                # Create log files if it doesn't exist, otherwise write to it
+
+                # Create log file if it doesn't exist, otherwise write to it
                 if os.path.exists(self.filepath):
                     append_write = "a"
                 else:
@@ -416,6 +419,7 @@ def create_callbacks(model, data, ARGS):
                         )
                     )
 
+                # Print performance
                 print(
                     "\nEpoch: {:d} - ROC-AUC: {:.6f} PR-AUC: {:.6f}".format(
                         epoch, score_roc, score_pr
@@ -453,8 +457,8 @@ def train_model(model, data_train, y_train, data_test, y_test, ARGS):
     train_generator = SequenceBuilder(
         data=data_train, target=y_train, batch_size=ARGS.batch_size, ARGS=ARGS
     )
-    model.fit_generator(
-        generator=train_generator,
+    model.fit(
+        x=train_generator,
         epochs=ARGS.epochs,
         max_queue_size=15,
         use_multiprocessing=True,
@@ -467,13 +471,13 @@ def train_model(model, data_train, y_train, data_test, y_test, ARGS):
 
 def main(ARGS):
     """Main function"""
-    print("Reading Data")
+    print("Reading Data...")
     data_train, y_train, data_test, y_test = read_data(ARGS)
 
-    print("Creating Model")
+    print("Creating Model...")
     model = model_create(ARGS)
 
-    print("Training Model")
+    print("Training Model...")
     train_model(
         model=model,
         data_train=data_train,
