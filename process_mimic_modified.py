@@ -24,31 +24,42 @@ import pandas as pd
 from datetime import datetime
 from sklearn.model_selection import train_test_split
 
+
 def convert_to_icd9(dx_str):
     """
     Maps an ICD diagnosis code to ICD9
     """
 
-    if dx_str.startswith('E'):
-        if len(dx_str) > 4: return dx_str[:4] + '.' + dx_str[4:]
-        else: return dx_str
+    if dx_str.startswith("E"):
+        if len(dx_str) > 4:
+            return dx_str[:4] + "." + dx_str[4:]
+        else:
+            return dx_str
     else:
-        if len(dx_str) > 3: return dx_str[:3] + '.' + dx_str[3:]
-        else: return dx_str
+        if len(dx_str) > 3:
+            return dx_str[:3] + "." + dx_str[3:]
+        else:
+            return dx_str
+
 
 def convert_to_3digit_icd9(dx_str):
     """
     Roll up a diagnosis code to 3 digits
     """
 
-    if dx_str.startswith('E'):
-        if len(dx_str) > 4: return dx_str[:4]
-        else: return dx_str
+    if dx_str.startswith("E"):
+        if len(dx_str) > 4:
+            return dx_str[:4]
+        else:
+            return dx_str
     else:
-        if len(dx_str) > 3: return dx_str[:3]
-        else: return dx_str
+        if len(dx_str) > 3:
+            return dx_str[:3]
+        else:
+            return dx_str
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
 
     admission_file = sys.argv[1]
     diagnosis_file = sys.argv[2]
@@ -57,12 +68,12 @@ if __name__ == '__main__':
     train_proportion = float(sys.argv[5])
 
     # Read mortality data
-    print('Collecting mortality information...')
+    print("Collecting mortality information...")
     pid_dod_map = {}
-    infd = open(patients_file, 'r')
+    infd = open(patients_file, "r")
     infd.readline()
     for line in infd:
-        tokens = line.strip().split(',')
+        tokens = line.strip().split(",")
         pid = int(tokens[1])
         dod_hosp = tokens[5]
         if len(dod_hosp) > 0:
@@ -72,32 +83,34 @@ if __name__ == '__main__':
     infd.close()
 
     # Read and create admission records
-    print('Building pid-admission mapping, admission-date mapping...')
+    print("Building pid-admission mapping, admission-date mapping...")
     pid_adm_map = {}
     adm_date_map = {}
-    infd = open(admission_file, 'r')
+    infd = open(admission_file, "r")
     infd.readline()
     for line in infd:
-        tokens = line.strip().split(',')
+        tokens = line.strip().split(",")
         pid = int(tokens[1])
         adm_id = int(tokens[2])
-        adm_time = datetime.strptime(tokens[3], '%Y-%m-%d %H:%M:%S')
+        adm_time = datetime.strptime(tokens[3], "%Y-%m-%d %H:%M:%S")
         adm_date_map[adm_id] = adm_time
-        if pid in pid_adm_map: pid_adm_map[pid].append(adm_id)
-        else: pid_adm_map[pid] = [adm_id]
+        if pid in pid_adm_map:
+            pid_adm_map[pid].append(adm_id)
+        else:
+            pid_adm_map[pid] = [adm_id]
     infd.close()
 
     # Create admission dx code mapping
-    print('Building admission-dxList mapping...')
+    print("Building admission-dxList mapping...")
     adm_dx_map = {}
     adm_dx_map_3digit = {}
-    infd = open(diagnosis_file, 'r')
+    infd = open(diagnosis_file, "r")
     infd.readline()
     for line in infd:
-        tokens = line.strip().split(',')
+        tokens = line.strip().split(",")
         adm_id = int(tokens[2])
-        dx_str = 'D_' + convert_to_icd9(tokens[4][1:-1])
-        dx_str_3digit = 'D_' + convert_to_3digit_icd9(tokens[4][1:-1])
+        dx_str = "D_" + convert_to_icd9(tokens[4][1:-1])
+        dx_str_3digit = "D_" + convert_to_3digit_icd9(tokens[4][1:-1])
         if adm_id in adm_dx_map:
             adm_dx_map[adm_id].append(dx_str)
         else:
@@ -109,18 +122,26 @@ if __name__ == '__main__':
     infd.close()
 
     # Create ordered visit mapping
-    print('Building pid-sortedVisits mapping...')
+    print("Building pid-sortedVisits mapping...")
     pid_seq_map = {}
     pid_seq_map_3digit = {}
     for pid, adm_id_list in pid_adm_map.items():
-        if len(adm_id_list) < 2: continue
-        sorted_list = sorted([(adm_date_map[adm_id], adm_dx_map[adm_id]) for adm_id in adm_id_list])
+        if len(adm_id_list) < 2:
+            continue
+        sorted_list = sorted(
+            [(adm_date_map[adm_id], adm_dx_map[adm_id]) for adm_id in adm_id_list]
+        )
         pid_seq_map[pid] = sorted_list
-        sorted_list_3digit = sorted([(adm_date_map[adm_id], adm_dx_map_3digit[adm_id]) for adm_id in adm_id_list])
+        sorted_list_3digit = sorted(
+            [
+                (adm_date_map[adm_id], adm_dx_map_3digit[adm_id])
+                for adm_id in adm_id_list
+            ]
+        )
         pid_seq_map_3digit[pid] = sorted_list_3digit
 
     # Create sequences of IDs, dates, labels, and code sequences
-    print('Building pids, dates, mortality_labels, strSeqs...')
+    print("Building pids, dates, mortality_labels, strSeqs...")
     pids = []
     dates = []
     seqs = []
@@ -137,7 +158,7 @@ if __name__ == '__main__':
         seqs.append(seq)
 
     # Create 3 digit ICD sequences
-    print('Building pids, dates, strSeqs for 3digit ICD9 code...')
+    print("Building pids, dates, strSeqs for 3digit ICD9 code...")
     seqs_3digit = []
     for pid, visits in pid_seq_map_3digit.items():
         seq = []
@@ -146,7 +167,7 @@ if __name__ == '__main__':
         seqs_3digit.append(seq)
 
     # Collect code types
-    print('Converting strSeqs to intSeqs, and making types...')
+    print("Converting strSeqs to intSeqs, and making types...")
     types = {}
     new_seqs = []
     for patient in seqs:
@@ -163,7 +184,7 @@ if __name__ == '__main__':
         new_seqs.append(new_patient)
 
     # Map code strings to integers
-    print('Converting strSeqs to intSeqs, and making types for 3digit ICD9 code...')
+    print("Converting strSeqs to intSeqs, and making types for 3digit ICD9 code...")
     types_3digit = {}
     new_seqs_3digit = []
     for patient in seqs_3digit:
@@ -180,55 +201,71 @@ if __name__ == '__main__':
         new_seqs_3digit.append(new_patient)
 
     # Compute time to today as to_event column
-    print('Making additional modifications to the data...')
-    today = datetime.strptime('2025-01-01', '%Y-%m-%d')
-    to_event = [[(today-date).days for date in patient] for patient in dates]
+    print("Making additional modifications to the data...")
+    today = datetime.strptime("2025-01-01", "%Y-%m-%d")
+    to_event = [[(today - date).days for date in patient] for patient in dates]
 
     # Compute time of the day when the person was admitted as the numeric column of size 1
-    numerics = [[[date.hour * 60 + date.minute - 720] for date in patient] for patient in dates]
+    numerics = [
+        [[date.hour * 60 + date.minute - 720] for date in patient] for patient in dates
+    ]
 
     # Add this feature to dictionary but leave 1 index empty for PADDING
-    types['Time of visit'] = len(types)+1
-    types_3digit['Time of visit'] = len(types_3digit)+1
+    types["Time of visit"] = len(types) + 1
+    types_3digit["Time of visit"] = len(types_3digit) + 1
 
     # Compute sorting indicies
     sort_indicies = np.argsort(list(map(len, to_event)))
 
     # Create the dataframes of data and sort them according to number of visits per patient
     print("Building sorted dataframes...")
-    all_data = pd.DataFrame(data={'codes': new_seqs,
-                                  'to_event': to_event,
-                                  'numerics': numerics}
-                           ,columns=['codes', 'to_event', 'numerics'])\
-                          .iloc[sort_indicies].reset_index()
-    all_data_3digit = pd.DataFrame(data={'codes': new_seqs_3digit,
-                                         'to_event': to_event,
-                                         'numerics': numerics}
-                                  ,columns=['codes', 'to_event', 'numerics'])\
-                                 .iloc[sort_indicies].reset_index()
-    all_targets = pd.DataFrame(data={'target': morts}
-                               ,columns=['target'])\
-                              .iloc[sort_indicies].reset_index()
+    all_data = (
+        pd.DataFrame(
+            data={"codes": new_seqs, "to_event": to_event, "numerics": numerics},
+            columns=["codes", "to_event", "numerics"],
+        )
+        .iloc[sort_indicies]
+        .reset_index()
+    )
+    all_data_3digit = (
+        pd.DataFrame(
+            data={"codes": new_seqs_3digit, "to_event": to_event, "numerics": numerics},
+            columns=["codes", "to_event", "numerics"],
+        )
+        .iloc[sort_indicies]
+        .reset_index()
+    )
+    all_targets = (
+        pd.DataFrame(data={"target": morts}, columns=["target"])
+        .iloc[sort_indicies]
+        .reset_index()
+    )
 
     # Create train test split
-    print('Creating train/test splits...')
-    data_train,data_test = train_test_split(all_data, train_size=train_proportion, random_state=12345)
-    data_train_3digit,data_test_3digit = train_test_split(all_data_3digit, train_size=train_proportion, random_state=12345)
-    target_train,target_test = train_test_split(all_targets, train_size=train_proportion, random_state=12345)
+    print("Creating train/test splits...")
+    data_train, data_test = train_test_split(
+        all_data, train_size=train_proportion, random_state=12345
+    )
+    data_train_3digit, data_test_3digit = train_test_split(
+        all_data_3digit, train_size=train_proportion, random_state=12345
+    )
+    target_train, target_test = train_test_split(
+        all_targets, train_size=train_proportion, random_state=12345
+    )
 
     # Create reverse dictionary in index:code format
-    types = dict((v,k) for k,v in types.items())
-    types_3digit = dict((v,k) for k,v in types_3digit.items())
+    types = dict((v, k) for k, v in types.items())
+    types_3digit = dict((v, k) for k, v in types_3digit.items())
 
     # Write out the data
-    print('Saving data...')
+    print("Saving data...")
     if not os.path.exists(out_directory):
         os.makedirs(out_directory)
-    data_train.sort_index().to_pickle(out_directory+'/data_train.pkl')
-    data_test.sort_index().to_pickle(out_directory+'/data_test.pkl')
-    data_train_3digit.sort_index().to_pickle(out_directory+'/data_train_3digit.pkl')
-    data_test_3digit.sort_index().to_pickle(out_directory+'/data_test_3digit.pkl')
-    target_train.sort_index().to_pickle(out_directory+'/target_train.pkl')
-    target_test.sort_index().to_pickle(out_directory+'/target_test.pkl')
-    pickle.dump(types, open(out_directory+'/dictionary.pkl', 'wb'), -1)
-    pickle.dump(types_3digit, open(out_directory+'/dictionary_3digit.pkl', 'wb'), -1)
+    data_train.sort_index().to_pickle(out_directory + "/data_train.pkl")
+    data_test.sort_index().to_pickle(out_directory + "/data_test.pkl")
+    data_train_3digit.sort_index().to_pickle(out_directory + "/data_train_3digit.pkl")
+    data_test_3digit.sort_index().to_pickle(out_directory + "/data_test_3digit.pkl")
+    target_train.sort_index().to_pickle(out_directory + "/target_train.pkl")
+    target_test.sort_index().to_pickle(out_directory + "/target_test.pkl")
+    pickle.dump(types, open(out_directory + "/dictionary.pkl", "wb"), -1)
+    pickle.dump(types_3digit, open(out_directory + "/dictionary_3digit.pkl", "wb"), -1)
